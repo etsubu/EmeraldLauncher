@@ -11,7 +11,8 @@ Note that currently online-mode servers are not supported as user account passwo
 This is to be added in future to support playing on online-mode servers.
 
 ## How to build
-The launcher requires Java 11 JDK to build which is the latest LTS version at the time of writing this. \
+The launcher requires Java 11 JDK to build which is the latest LTS version at the time of writing this.
+
 ### Windows
 You can get Java 11 for windows from here https://adoptopenjdk.net/ \
 Select OpenJDK 11 LTS or later version.
@@ -21,6 +22,7 @@ For debian based OS you can install Java 11 with \
 ```
 sudo apt install openjdk-11-jdk-headless -y
 ```
+### Build
 To build the launcher
 ```
 git clone
