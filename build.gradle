@@ -1,0 +1,33 @@
+plugins {
+    id 'java'
+    id "org.owasp.dependencycheck" version "5.3.2"
+}
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+sourceCompatibility = 11
+targetCompatibility = 11
+
+dependencies {
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.13.3'
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.13.3'
+    implementation group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.13.3'
+    implementation 'com.google.code.gson:gson:2.8.6'
+}
+
+group = 'EmeraldLauncher'
+version = '1.4'
+
+jar {
+    manifest {
+        attributes "Main-Class": "Launcher.Main"
+    }
+
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
