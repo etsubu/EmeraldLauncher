@@ -1,18 +1,14 @@
 package Launcher;
 
 import javax.swing.*;
-import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Formatter;
-import java.util.Locale;
 
 public class OutputWrapper extends PrintStream {
-    private PrintStream stdout;
-    private JTextArea area;
+    private final PrintStream stdout;
+    private final JTextArea area;
 
     public OutputWrapper(OutputStream out) {
         super(out);
@@ -25,7 +21,7 @@ public class OutputWrapper extends PrintStream {
     }
 
     @Override
-    public void write(byte buf[], int off, int len) {
+    public void write(byte[] buf, int off, int len) {
         this.area.append(new String(Arrays.copyOfRange(buf, off, len), StandardCharsets.UTF_8));
         stdout.write(buf, off, len);
     }
@@ -125,7 +121,7 @@ public class OutputWrapper extends PrintStream {
     @Override
     public void println(float x) {
         synchronized (this) {
-            area.append(String.valueOf(x) + "\n");
+            area.append(x + "\n");
             stdout.println(x);
         }
     }
@@ -133,13 +129,13 @@ public class OutputWrapper extends PrintStream {
     @Override
     public void println(double x) {
         synchronized (this) {
-            area.append(String.valueOf(x) + "\n");
+            area.append(x + "\n");
             stdout.println(x);
         }
     }
 
     @Override
-    public void println(char x[]) {
+    public void println(char[] x) {
         synchronized (this) {
             area.append(String.valueOf(x) + "\n");
             stdout.println(x);
@@ -149,7 +145,7 @@ public class OutputWrapper extends PrintStream {
     @Override
     public void println(String x) {
         synchronized (this) {
-            area.append(String.valueOf(x) + "\n");
+            area.append(x + "\n");
             stdout.println(x);
         }
     }
@@ -158,7 +154,7 @@ public class OutputWrapper extends PrintStream {
     public void println(Object x) {
         String s = String.valueOf(x);
         synchronized (this) {
-            area.append(String.valueOf(x) + "\n");
+            area.append(x + "\n");
             stdout.println(x);
         }
     }

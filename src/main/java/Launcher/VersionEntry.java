@@ -1,11 +1,11 @@
 package Launcher;
 
 public class VersionEntry implements Comparable<VersionEntry> {
-    private String id;
-    private String type;
+    private final String id;
+    private final String type;
     private String url;
-    private String time;
-    private String releaseTime;
+    private final String time;
+    private final String releaseTime;
 
     public VersionEntry(String id, String type, String time, String releaseTime) {
         this.id = id;
