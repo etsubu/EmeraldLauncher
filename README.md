@@ -18,7 +18,7 @@ You can get Java 11 for windows from here https://adoptopenjdk.net/ \
 Select OpenJDK 11 LTS or later version.
 
 ### Debian
-For debian based OS you can install Java 11 with \
+For debian based OS you can install Java 11 with
 ```
 sudo apt install openjdk-11-jdk-headless -y
 ```
