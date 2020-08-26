@@ -5,7 +5,7 @@ pipeline {
             args '-v $HOME/.gradle:/root/.gradle'
         }
     }
-    triggers { cron(cron_string) }
+    triggers { cron(env.BRANCH_NAME == "master" ? "H 5 * * *" : "") }
     stages {
         stage("Presteps") {
             steps {
