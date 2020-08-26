@@ -2,7 +2,7 @@ pipeline {
     agent {
         docker {
             image 'adoptopenjdk/openjdk11:jdk-11.0.8_10-alpine'
-            args '-v ~/.gradle:/root/.gradle'
+            args '-v /home/jenkins/.gradle:/root/.gradle'
         }
     }
     triggers { cron(env.BRANCH_NAME == "master" ? "H 3 * * *" : "") }
