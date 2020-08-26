@@ -60,8 +60,8 @@ public class VersionController {
                     if(gameInfo.exists()) {
                         GameVersionEntry version;
                         try {
-                            version = gson.fromJson(new String(Files.readAllBytes(gameInfo.toPath()), StandardCharsets.UTF_8), GameVersionEntry.class);
-                            entries.add(new VersionEntry(gameFolder.getName(), version.getType(), version.getTime(), version.getReleaseTime()));
+                            version = gson.fromJson(Files.readString(gameInfo.toPath()), GameVersionEntry.class);
+                            entries.add(new VersionEntry(gameFolder.getName(), null, version.getType(), version.getTime(), version.getReleaseTime()));
                         } catch (IOException e) {
                             //
                         }

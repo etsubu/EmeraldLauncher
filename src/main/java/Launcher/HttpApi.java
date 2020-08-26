@@ -7,6 +7,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +48,9 @@ public class HttpApi {
     public boolean downloadToFile(String url, Path file, JProgressBar progressBar, int length, boolean overwrite) throws IOException, InterruptedException {
         if(file.toFile().exists()) {
             if(overwrite) {
-                file.toFile().delete();
+                if(!file.toFile().delete()) {
+                    log.error("Failed to delete file before overwriting {}", file.toString());
+                }
             } else {
                 //log.info("File: " + file.toString() + " exists. Skipping download");
                 return true;
@@ -59,9 +62,10 @@ public class HttpApi {
             throw new IOException("Invalid HTTP response: " + response.statusCode());
         }
 
-        if(!file.getParent().toFile().exists()) {
-            if(!file.getParent().toFile().mkdirs()) {
-                log.error("Failed to create folder: " + file.getParent().toString());
+        Optional<File> parent = Optional.ofNullable(file.getParent()).map(Path::toFile);
+        if(!parent.map(File::exists).orElse(true)) {
+            if(!parent.map(File::mkdirs).orElse(true)) {
+                log.error("Failed to create folder: " + parent.map(x -> x.toString()).orElse("No parent available"));
                 return false;
             }
         }
@@ -72,24 +76,21 @@ public class HttpApi {
         }
         // this will be useful to display download percentage
         // might be -1: server did not report the length
-        int fileLength = length;
         progressBar.setString(title);
-        progressBar.setMaximum(fileLength);
+        progressBar.setMaximum(length);
         progressBar.setValue(0);
         InputStream input = response.body();
         byte[] buffer = new byte[4096];
         int n;
         int counter = 0;
 
-        OutputStream output = new FileOutputStream( file.toFile());
-        while ((n = input.read(buffer)) != -1)
-        {
-            output.write(buffer, 0, n);
-            counter += n;
-            progressBar.setValue(counter);
+        try(OutputStream output = new FileOutputStream( file.toFile())) {
+            while ((n = input.read(buffer)) != -1) {
+                output.write(buffer, 0, n);
+                counter += n;
+                progressBar.setValue(counter);
+            }
         }
-        output.close();
-        //log.info("Download completed");
         progressBar.setValue(progressBar.getMaximum());
         return true;
     }

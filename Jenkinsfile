@@ -5,6 +5,7 @@ pipeline {
             args '-v $HOME/.gradle:/root/.gradle'
         }
     }
+    triggers { cron(cron_string) }
     stages {
         stage("Presteps") {
             steps {
