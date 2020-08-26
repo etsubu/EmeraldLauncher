@@ -154,8 +154,8 @@ public class OutputWrapper extends PrintStream {
     public void println(Object x) {
         String s = String.valueOf(x);
         synchronized (this) {
-            area.append(x + "\n");
-            stdout.println(x);
+            area.append(s + "\n");
+            stdout.println(s);
         }
     }
 

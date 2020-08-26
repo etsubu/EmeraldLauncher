@@ -1,14 +1,17 @@
 package Launcher;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 public class VersionEntry implements Comparable<VersionEntry> {
     private final String id;
     private final String type;
-    private String url;
+    private final String url;
     private final String time;
     private final String releaseTime;
 
-    public VersionEntry(String id, String type, String time, String releaseTime) {
+    public VersionEntry(String id, String url, String type, String time, String releaseTime) {
         this.id = id;
+        this.url = url;
         this.type = type;
         this.time = time;
         this.releaseTime = releaseTime;
@@ -36,6 +39,7 @@ public class VersionEntry implements Comparable<VersionEntry> {
         return "Version: " + id + " type: " + type;
     }
 
+    @SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
     @Override
     public int compareTo(VersionEntry entry) {
         if(entry.id.equals(this.id)) {

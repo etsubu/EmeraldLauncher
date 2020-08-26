@@ -138,15 +138,12 @@ public class VersionRepairer implements Runnable {
     private boolean checkLibraries(GameVersionEntry version) throws IOException, InterruptedException {
         log.info("Checking libraries for " + entry.getId());
         Path installPath = workingDir.resolve(Paths.get("libraries"));
-        Path versionsPath = workingDir.resolve(Paths.get("versions", entry.getId()));
-        Path nativesPath = versionsPath.resolve("natives");
         List<LibraryEntry> libraries = version.getLibraries();
         if(libraries == null || libraries.isEmpty()) {
             log.error("Could not parse libraries");
             return false;
         }
-        for(int i = 0; i < libraries.size(); i++) {
-            LibraryEntry library = libraries.get(i);
+        for (LibraryEntry library : libraries) {
             //log.info("Downloading library: " + (i + 1) + "/" + libraries.size());
             try {
                 String path = library.getDownloads().getArtifact().getPath();
@@ -154,13 +151,13 @@ public class VersionRepairer implements Runnable {
                 String sha1 = library.getDownloads().getArtifact().getSha1();
                 int size = library.getDownloads().getArtifact().getSize();
                 Path libraryPath = installPath.resolve(path);
-                if(!libraryPath.getParent().toFile().exists()) {
-                    if(!libraryPath.getParent().toFile().mkdirs()) {
+                if (!libraryPath.getParent().toFile().exists()) {
+                    if (!libraryPath.getParent().toFile().mkdirs()) {
                         log.error("Failed to create folder: " + libraryPath.getParent().toString());
                         return false;
                     }
                 }
-                if(!doesChecksumMatch(libraryPath, sha1, size)) {
+                if (!doesChecksumMatch(libraryPath, sha1, size)) {
                     log.info("Corrupted file: " + libraryPath.toString());
                     if (!httpApi.downloadToFile(url, libraryPath, progressBar, size, true)) {
                         log.error("Failed to download library: " + url);
@@ -168,9 +165,9 @@ public class VersionRepairer implements Runnable {
                     }
                 }
                 updateProgress(size);
-                if(library.getDownloads().getClassifiers().isPresent()) {
+                if (library.getDownloads().getClassifiers().isPresent()) {
                     Optional<LibraryArtifact> nativeArtifact = library.getDownloads().getClassifiers().get().getNativesHost();
-                    if(nativeArtifact.isPresent()) {
+                    if (nativeArtifact.isPresent()) {
                         path = nativeArtifact.get().getPath();
                         url = nativeArtifact.get().getUrl();
                         sha1 = nativeArtifact.get().getSha1();
@@ -183,7 +180,7 @@ public class VersionRepairer implements Runnable {
                             }
                         }
                         //log.info("Downloading native library: " + name);
-                        if(!doesChecksumMatch(libraryPath, sha1, size)) {
+                        if (!doesChecksumMatch(libraryPath, sha1, size)) {
                             log.info("Corrupted file: " + libraryPath.toString());
                             if (!httpApi.downloadToFile(url, libraryPath, progressBar, size, true)) {
                                 log.error("Failed to download library: " + url);
@@ -193,7 +190,7 @@ public class VersionRepairer implements Runnable {
                         updateProgress(size);
                     }
                 }
-            } catch(NullPointerException e) {
+            } catch (NullPointerException e) {
                 log.error("Failed to parse library entry: " + e.getMessage());
                 return false;
             }
@@ -211,15 +208,14 @@ public class VersionRepairer implements Runnable {
             log.error("Failed to download asset indexes info");
             return false;
         }
-        String assetIndexJson = new String(Files.readAllBytes(assetPath), StandardCharsets.UTF_8);
+        String assetIndexJson = Files.readString(assetPath);
         GameAssets assets = gson.fromJson(assetIndexJson, GameAssets.class);
         Path assetObjects = installPath.resolve("objects");
         int counter = 0;
         var objects = assets.getObjects();
         updateProgress(size);
-        for(String key : objects.keySet()) {
+        for(AssetEntry asset : objects.values()) {
             //log.info("Downloading asset " + counter + " / " + assets.getObjects().size());
-            var asset = objects.get(key);
             String hash = asset.getHash();
             int assetSize = asset.getSize();
             String assetUrl = hash.substring(0, 2) + "/" + hash;
@@ -227,7 +223,7 @@ public class VersionRepairer implements Runnable {
             if(!doesChecksumMatch(assetObjectPath, hash, assetSize)) {
                 log.info("Corrupted file: " + assetObjectPath.toString());
                 url = VersionLauncher.RESOURCES_BASE_URL + assetUrl;
-                if (!httpApi.downloadToFile(url, assetObjectPath, progressBar, assets.getObjects().get(key).getSize(), true)) {
+                if (!httpApi.downloadToFile(url, assetObjectPath, progressBar, asset.getSize(), true)) {
                     log.error("Failed to download asset indexes info");
                     return false;
                 }
