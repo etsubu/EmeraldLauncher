@@ -5,7 +5,7 @@ pipeline {
             args '-v $HOME/.gradle:/root/.gradle'
         }
     }
-    triggers { cron(env.BRANCH_NAME == "master" ? "H 5 * * *" : "") }
+    triggers { cron(env.BRANCH_NAME == "master" ? "H 3 * * *" : "") }
     stages {
         stage("Presteps") {
             steps {
@@ -34,6 +34,9 @@ pipeline {
         always {
             archiveArtifacts artifacts: 'build/libs/**/*.jar,build/reports/**/*.html', fingerprint: true
             junit 'build/reports/**/*.xml'
+        }
+        cleanup {
+            cleanWs()
         }
     }
 }
