@@ -11,7 +11,7 @@ pipeline {
             steps {
                 sh 'chmod +x gradlew'
                 sh './gradlew clean'
-                echo '~'
+                sh 'printenv'
             }
         }
         stage('Build') {
