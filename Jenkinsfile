@@ -5,7 +5,12 @@ pipeline {
             args '-v /home/jenkins/.gradle:/root/.gradle'
         }
     }
+
     triggers { cron(env.BRANCH_NAME == "master" ? "H 3 * * *" : "") }
+
+    /* Only keep latest 5 builds */
+    options { buildDiscarder(logRotator(numToKeepStr: '5')) }
+
     stages {
         stage("Presteps") {
             steps {
@@ -27,7 +32,6 @@ pipeline {
         stage('Verify') {
             steps {
                 sh './gradlew spotbugsMain'
-                sh './gradlew dependencyCheckAnalyze'
             }
         }
     }
