@@ -47,7 +47,7 @@ public class Launcher extends JFrame implements ActionListener, Runnable {
         initComponents();
         this.launcher = new VersionLauncher(progressBar, totalProgressBar, workingDir, wrapper, this);
         this.repairer = new VersionRepairer(progressBar, totalProgressBar, workingDir);
-        this.setTitle("Emerald Launcher 1.5");
+        this.setTitle("Emerald Launcher 1.6");
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setPreferredSize(new Dimension(600, 400));
         this.pack();
