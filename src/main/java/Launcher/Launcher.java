@@ -1,6 +1,5 @@
 package Launcher;
 
-import VersionValues.GameVersionEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,8 +18,8 @@ import java.util.List;
 public class Launcher extends JFrame implements ActionListener, Runnable {
     private static final Logger log = LoggerFactory.getLogger(Launcher.class);
     private Path workingDir;
-    private VersionController controller;
-    private VersionRepairer repairer;
+    private final VersionController controller;
+    private final VersionRepairer repairer;
     private JLabel nameLabel;
     private JMenuBar menuBar;
     private JMenu menu;
@@ -41,7 +40,7 @@ public class Launcher extends JFrame implements ActionListener, Runnable {
         this.wrapper = wrapper;
         this.infoArea = wrapper.getArea();
         this.workingDir = workingDir;
-        this.jvmArgs = "-XX:+UseG1GC -Dsun.rmi.dgc.server.gcInterval=2147483646 -XX:+UnlockExperimentalVMOptions -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32M";
+        this.jvmArgs = "-Xmx2048M -Xms1048M -XX:+UseG1GC -Dsun.rmi.dgc.server.gcInterval=2147483646 -XX:+UnlockExperimentalVMOptions -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32M";
         //this.jvmArgs = "-Xmx2G -XX:-UseAdaptiveSizePolicy -Xmn128M";
         this.controller = new VersionController(workingDir);
         //initLookAndFeel();
@@ -120,7 +119,7 @@ public class Launcher extends JFrame implements ActionListener, Runnable {
         Path config = this.workingDir.resolve("config.dat");
         Path jvmArgs = this.workingDir.resolve("jvm.dat");
         try {
-            String conf = new String(Files.readAllBytes(config), StandardCharsets.UTF_8);
+            String conf = Files.readString(config);
             if(conf.contains(";")) {
                 String[] parts = conf.split(";");
                 this.preferredVersion = parts[0];
@@ -130,7 +129,7 @@ public class Launcher extends JFrame implements ActionListener, Runnable {
         }
 
         try {
-            this.jvmArgs = new String(Files.readAllBytes(jvmArgs), StandardCharsets.UTF_8);
+            this.jvmArgs = Files.readString(jvmArgs);
         } catch (IOException e) { //
         }
     }

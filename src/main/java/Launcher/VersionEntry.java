@@ -1,7 +1,5 @@
 package Launcher;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 public class VersionEntry implements Comparable<VersionEntry> {
     private final String id;
     private final String type;
@@ -39,7 +37,6 @@ public class VersionEntry implements Comparable<VersionEntry> {
         return "Version: " + id + " type: " + type;
     }
 
-    @SuppressFBWarnings("EQ_COMPARETO_USE_OBJECT_EQUALS")
     @Override
     public int compareTo(VersionEntry entry) {
         if(entry.id.equals(this.id)) {
