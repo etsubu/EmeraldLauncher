@@ -22,7 +22,7 @@ dependencies {
 }
 
 group = 'EmeraldLauncher'
-version = '1.8'
+version = '1.9-SNAPSHOT'
 
 jar {
     manifest {
