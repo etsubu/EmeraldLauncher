@@ -11,23 +11,23 @@ Note that currently online-mode servers are not supported as user account passwo
 This is to be added in future to support playing on online-mode servers.
 
 ## How to build
-The launcher requires Java 11 JDK to build which is the latest LTS version at the time of writing this.
+The launcher requires Java 17 JDK to build which is the latest LTS version at the time of writing this.
 
 ### Windows
-You can get Java 11 for windows from here https://adoptopenjdk.net/ \
-Select OpenJDK 11 LTS or later version.
+You can get Java 17 for windows from here https://adoptium.net/ \
+Select OpenJDK 17 LTS or later version.
 
 ### Debian
-For debian based OS you can install Java 11 with
+For debian based OS you can install Java 17 with
 ```
-sudo apt install openjdk-11-jdk-headless -y
+sudo apt install openjdk-17-jdk-headless -y
 ```
 ### Build
 To build the launcher
 ```
-git clone
+git clone git@github.com:etsubu/EmeraldLauncher.git
 cd EmeraldLauncher
-gradlew clean build
+gradlew shadowJar
 ```
 The built launcher can be found in build/libs
 
