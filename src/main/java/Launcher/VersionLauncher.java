@@ -67,8 +67,9 @@ public class VersionLauncher implements Runnable {
                 log.info("Version: " + entry.getId() + " exists already. Starting up..");
                 startClient();
             } else {
-                log.info("Version: " + entry.getId() + " does not exist locally. Downloading..");
+                log.info("Version: {} does not exist locally. Downloading... {}", entry.getId(), entry.getDownloadUrl());
                 String versionJson = httpApi.sendGet(entry.getDownloadUrl());
+                System.out.println(entry.getDownloadUrl());
                 GameVersionEntry version = gson.fromJson(versionJson, GameVersionEntry.class);
                 //filterLibraries(version);
                 log.info("Downloaded game version information");
@@ -124,7 +125,7 @@ public class VersionLauncher implements Runnable {
         }
         for(LibraryEntry entry : version.getLibraries()) {
             totalSizeDownload += entry.getDownloads().getArtifact().getSize();
-            entry.getDownloads().getClassifiers().flatMap(LibraryClassifiers::getNativesHost).ifPresent(y -> totalSizeDownload += y.getSize());
+            //entry.getDownloads().getClassifiers().flatMap(LibraryClassifiers::getNativesHost).ifPresent(y -> totalSizeDownload += y.getSize());
         }
         totalSizeDownload += version.getDownloads().getClient().getSize();
         progressBar.setValue(0);
@@ -223,27 +224,23 @@ public class VersionLauncher implements Runnable {
                     return false;
                 }
                 updateProgress(size);
-                if (library.getDownloads().getClassifiers().isPresent()) {
-                    Optional<LibraryArtifact> nativeArtifact = library.getDownloads().getClassifiers().get().getNativesHost();
-                    if (nativeArtifact.isPresent()) {
-                        path = nativeArtifact.get().getPath();
-                        url = nativeArtifact.get().getUrl();
-                        sha1 = nativeArtifact.get().getSha1();
-                        size = nativeArtifact.get().getSize();
-                        libraryPath = installPath.resolve(path);
-                        if (!libraryPath.getParent().toFile().exists()) {
-                            if (!libraryPath.getParent().toFile().mkdirs()) {
-                                log.error("Failed to create folder: " + libraryPath.getParent().toString());
-                                return false;
-                            }
-                        }
-                        //log.info("Downloading native library: " + name);
-                        if (!httpApi.downloadToFile(url, libraryPath, progressBar, size)) {
-                            log.error("Failed to download library: " + url);
+                if(library.doesBelongToOS()) {
+                    var artifact = library.getDownloads().getArtifact();
+                    path = artifact.getPath();
+                    url = artifact.getUrl();
+                    size = artifact.getSize();
+                    libraryPath = installPath.resolve(path);
+                    if (!libraryPath.getParent().toFile().exists()) {
+                        if (!libraryPath.getParent().toFile().mkdirs()) {
+                            log.error("Failed to create folder: " + libraryPath.getParent().toString());
                             return false;
                         }
-                        updateProgress(size);
                     }
+                    if (!httpApi.downloadToFile(url, libraryPath, progressBar, size)) {
+                        log.error("Failed to download library: " + url);
+                        return false;
+                    }
+                    updateProgress(size);
                 }
             } catch (NullPointerException e) {
                 log.error("Failed to parse library entry: " + e.getMessage());
@@ -278,6 +275,12 @@ public class VersionLauncher implements Runnable {
     }
 
     private int isHigherVersion(String version1, String version2) {
+        if(version1.contains(":-natives")) {
+            version1 = version1.substring(version1.lastIndexOf(':'));
+        }
+        if(version2.contains(":-natives")) {
+            version2 = version2.substring(version1.lastIndexOf(':'));
+        }
         String[] parts1 = version1.split("\\.");
         String[] parts2 = version2.split("\\.");
         for(int i = 0; i < Math.min(parts1.length, parts2.length); i++) {
@@ -290,112 +293,11 @@ public class VersionLauncher implements Runnable {
                     return -1;
                 }
             } catch(NumberFormatException e) {
-                log.warn("Failed to compare version numbers: " + version1 + " == " + version2);
+                log.warn("Failed to compare version numbers: {} == {}", version1, version2);
                 return 1;
             }
         }
         return 0;
-    }
-
-    private void parseNative(GameVersionEntry entry, StringBuilder builder) {
-        for(LibraryEntry libraryEntry : entry.getLibraries()) {
-            if(libraryEntry.getDownloads().getClassifiers().isPresent()) {
-                Optional<LibraryArtifact> nativeLib = libraryEntry.getDownloads().getClassifiers().get().getNativesHost();
-                if(nativeLib.isPresent()) {
-                    Optional<Path> nativeLibPath = Optional.ofNullable(workingDir.resolve(Paths.get("libraries", nativeLib.get().getPath())).getParent());
-                    nativeLibPath.ifPresent(x -> builder.append(x.toString()).append(File.pathSeparator));
-                }
-            }
-        }
-        if(builder.length() >= 1) {
-            builder.deleteCharAt(builder.length() - 1);
-        }
-    }
-
-    private void extractNatives(GameVersionEntry entry) throws IOException {
-        for(LibraryEntry libraryEntry : entry.getLibraries()) {
-            if(libraryEntry.getDownloads().getClassifiers().isPresent()) {
-                Optional<LibraryArtifact> nativeLib = libraryEntry.getDownloads().getClassifiers().get().getNativesHost();
-                if(nativeLib.isPresent()) {
-                    Path nativeLibPath = workingDir.resolve(Paths.get("libraries", nativeLib.get().getPath()));
-                    extractNative(nativeLibPath);
-                }
-            }
-        }
-    }
-
-    private void extractNative(Path lib) throws IOException {
-        Path dir = lib.getParent();
-        byte[] buffer = new byte[4096];
-        ZipInputStream zis = new ZipInputStream(new FileInputStream(lib.toFile()));
-        ZipEntry zipEntry = zis.getNextEntry();
-        while (zipEntry != null) {
-            Path newFile = newFile(dir, zipEntry);
-            if((newFile.toString().endsWith(".dll") || newFile.toString().endsWith(".so")) && !newFile.toFile().exists()) {
-                log.info("Extract " + newFile.toString());
-                try(FileOutputStream fos = new FileOutputStream(newFile.toFile())) {
-                    int len;
-                    while ((len = zis.read(buffer)) > 0) {
-                        fos.write(buffer, 0, len);
-                    }
-                }
-            }
-            zipEntry = zis.getNextEntry();
-        }
-        zis.closeEntry();
-        zis.close();
-    }
-
-    private static Path newFile(Path destinationDir, ZipEntry zipEntry) throws IOException {
-        Path destFile = destinationDir.resolve(zipEntry.getName());//destinationDir, zipEntry.getName());
-        if(!destFile.toAbsolutePath().startsWith(destinationDir.toAbsolutePath()))
-            throw new IOException("Entry is outside of the target dir: " + zipEntry.getName());
-        return destFile;
-    }
-
-    private void filterLibraries(GameVersionEntry entry) {
-        List<LibraryEntry> libraries = entry.getLibraries();
-        for(int i = 0; i < libraries.size(); i++) {
-            String name = libraries.get(i).getName();
-            int index = name.lastIndexOf(':');
-            if(index == -1) {
-                log.warn("Failed to parse library name " + name);
-                continue;
-            }
-            String name1 = name.substring(0, index);
-            String version1 = name.substring(index + 1);
-            for(int j = i + 1; j < libraries.size(); j++) {
-                String name2 = libraries.get(j).getName();
-                int index2 = name2.lastIndexOf(':');
-                if(index2 == -1) {
-                    log.warn("Failed to parse library name " + name2);
-                    continue;
-                }
-                String nameWithoutVersion2 = name2.substring(0, index2);
-                String version2 = name2.substring(index2 + 1);
-                if(name1.equals(nameWithoutVersion2)) {
-                    int cmp = isHigherVersion(version1, version2);
-                    if(cmp == 1) {
-                        libraries.remove(j);
-                        i--;
-                    } else if(cmp == -1){
-                        libraries.remove(i);
-                        i--;
-                    } else {
-                        if(libraries.get(i).getDownloads().getClassifiers().isPresent()) {
-                            if(!libraries.get(j).getDownloads().getClassifiers().isPresent()) {
-                                libraries.remove(j);
-                                i--;
-                            }
-                        } else if(libraries.get(j).getDownloads().getClassifiers().isPresent()) {
-                            libraries.remove(i);
-                            i--;
-                        }
-                    }
-                    break;
-                }
-            }
-        }
     }
 
     private boolean startClient() {
@@ -413,8 +315,6 @@ public class VersionLauncher implements Runnable {
         GameVersionEntry version;
         try {
             version = gson.fromJson(new String(Files.readAllBytes(startupArgs), StandardCharsets.UTF_8), GameVersionEntry.class);
-            filterLibraries(version);
-            extractNatives(version);
         } catch (IOException e) {
             log.error("Failed to read game meta data from: " + startupArgs.toString() + " ", e);
             return false;
@@ -422,7 +322,7 @@ public class VersionLauncher implements Runnable {
 
         this.argumentMap.put("${assets_index_name}", version.getAssetIndex().getId());
         StringBuilder nativeLibraryBuilder = new StringBuilder();
-        parseNative(version, nativeLibraryBuilder);
+        //parseNative(version, nativeLibraryBuilder);
 
         this.argumentMap.put("${natives_directory}", nativeLibraryBuilder.toString());
         ProcessBuilder builder = new ProcessBuilder();
@@ -476,23 +376,6 @@ public class VersionLauncher implements Runnable {
         }
         return true;
     }
-
-    /*
-    private boolean downloadGameClient(String url, String hash, VersionEntry entry) throws IOException {
-        Path output = workingDir.resolve(Paths.get( "versions", entry.getId()));
-        if(!output.toFile().exists() && !output.toFile().mkdirs()) {
-            log.error("Failed to create directories: " + output.toString());
-            return false;
-        }
-        Path clientPath = output.resolve("client.jar");
-        if(!clientPath.toFile().exists()) {
-            log.info("Downloading: " + url + " -> " + clientPath.toString());
-            HttpApi.downloadToFile(url, output.resolve("client.jar"), progressBar, 1);
-        } else {
-            log.info("Skipping client.jar download because it already exists");
-        }
-        return true;
-    }*/
 
     public void launch(VersionEntry entry, String name, String jvmArgs) {
         if(!this.instance.isAlive()) {

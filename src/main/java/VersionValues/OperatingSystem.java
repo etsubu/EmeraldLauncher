@@ -8,8 +8,10 @@ import java.util.regex.Pattern;
 public class OperatingSystem {
     private static final Logger log = LoggerFactory.getLogger(OperatingSystem.class);
     public static final String HOST_OS = System.getProperty("os.name").toLowerCase();
+
+    public static final String bitness = System.getProperty("sun.arch.data.model").toLowerCase();
     private static final String HOST_OS_VERSION = System.getProperty("os.version").toLowerCase();
-    private static final String HOST_ARCH = System.getProperty("os.arch").toLowerCase();
+    public static final String HOST_ARCH = System.getProperty("os.arch").toLowerCase();
     private final String name;
     private final String version;
     private final String arch;
