@@ -20,16 +20,17 @@ public class Main {
 
     public static void printSystemInfo() {
         log.info("Starting up...");
-        log.info("java.version = " + System.getProperty("java.version"));
-        log.info("java.class.version = " + System.getProperty("java.class.version"));
-        log.info("OS=" + System.getProperty("os.name") + " " + System.getProperty("os.version")  + " " +System.getProperty("os.arch"));
+        log.info("java.version = {}", System.getProperty("java.version"));
+        log.info("java.class.version = {}", System.getProperty("java.class.version"));
+        log.info("java.io.tmpdir = {}", System.getProperty("java.io.tmpdir"));
+        log.info("OS={} {} {}", System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch"));
     }
 
     public static void main(String[] args) {
         printSystemInfo();
         Path path = Paths.get(System.getProperty("user.dir"),".minecraft");
         if (!path.toFile().exists()) {
-            log.info("Minecraft folder does not exist. Creating: " + path.toString());
+            log.info("Minecraft folder does not exist. Creating: {}", path);
             if (!path.toFile().mkdir()) {
                 log.error("Failed to create .minecraft folder. Maybe we lack permissions?");
                 JOptionPane.showMessageDialog(null, "Failed to create .minecraft folder probably due to insufficient permissions." +

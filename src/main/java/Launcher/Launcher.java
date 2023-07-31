@@ -41,9 +41,7 @@ public class Launcher extends JFrame implements ActionListener, Runnable {
         this.infoArea = wrapper.getArea();
         this.workingDir = workingDir;
         this.jvmArgs = "-Xmx2048M -Xms1048M -XX:+UseG1GC -Dsun.rmi.dgc.server.gcInterval=2147483646 -XX:+UnlockExperimentalVMOptions -XX:G1NewSizePercent=20 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32M";
-        //this.jvmArgs = "-Xmx2G -XX:-UseAdaptiveSizePolicy -Xmn128M";
         this.controller = new VersionController(workingDir);
-        //initLookAndFeel();
         initComponents();
         this.launcher = new VersionLauncher(progressBar, totalProgressBar, workingDir, wrapper, this);
         this.repairer = new VersionRepairer(progressBar, totalProgressBar, workingDir);
@@ -179,7 +177,7 @@ public class Launcher extends JFrame implements ActionListener, Runnable {
                     log.info("Game version was not selected");
                     JOptionPane.showMessageDialog(null, "You need to select minecraft version to play!", "Empty version", JOptionPane.ERROR_MESSAGE);
                 } else {
-                    log.info("Trying to launch version: " + this.versionSelector.getSelectedItem());
+                    log.info("Trying to launch version: {}", this.versionSelector.getSelectedItem());
                     writeConfigs(this.nameField.getText(), (VersionEntry) this.versionSelector.getSelectedItem());
                     this.launcher.launch((VersionEntry) this.versionSelector.getSelectedItem(), this.nameField.getText(), jvmArgs);
                 }
@@ -191,7 +189,7 @@ public class Launcher extends JFrame implements ActionListener, Runnable {
             String args = JOptionPane.showInputDialog("Input jvm args", jvmArgs);
             if(args != null && !args.isEmpty()) {
                 this.jvmArgs = args;
-                log.info("JVM arguments set to: " + args);
+                log.info("JVM arguments set to: {}", args);
                 saveJVMArgs();
             } else {
                 log.info("JVM arguments not saved");

@@ -63,7 +63,7 @@ public class VersionLauncher implements Runnable {
     @Override
     public void run() {
         try {
-            if(doesVersionExist()) {
+            if (doesVersionExist()) {
                 log.info("Version: " + entry.getId() + " exists already. Starting up..");
                 startClient();
             } else {
@@ -73,32 +73,32 @@ public class VersionLauncher implements Runnable {
                 GameVersionEntry version = gson.fromJson(versionJson, GameVersionEntry.class);
                 //filterLibraries(version);
                 log.info("Downloaded game version information");
-                if(!calculateDownloadSize(version)) {
+                if (!calculateDownloadSize(version)) {
                     log.error("Failed to query game file meta data");
                     return;
                 }
-               if(installGame(versionJson, version)) {
-                   if(installLibraries(version)) {
-                       if(downloadAssets(version)) {
-                           if (startClient()) {
-                               log.info("Minecraft " + entry.getId() + " " + entry.getType() + " Launched. Enjoy the games!");
-                           } else {
-                               log.error("Failed to start game client");
-                           }
-                       } else {
-                           log.error("Failed to download game assets");
-                       }
-                   } else {
-                       log.error("Failed to install game libraries");
-                   }
-               } else {
-                   log.error("Failed to install game client");
-               }
+                if (installGame(versionJson, version)) {
+                    if (installLibraries(version)) {
+                        if (downloadAssets(version)) {
+                            if (startClient()) {
+                                log.info("Minecraft " + entry.getId() + " " + entry.getType() + " Launched. Enjoy the games!");
+                            } else {
+                                log.error("Failed to start game client");
+                            }
+                        } else {
+                            log.error("Failed to download game assets");
+                        }
+                    } else {
+                        log.error("Failed to install game libraries");
+                    }
+                } else {
+                    log.error("Failed to install game client");
+                }
             }
         } catch (IOException e) {
             log.error("Failed to get version: " + entry.getId() + " json information", e);
             e.printStackTrace();
-        } catch(JsonSyntaxException e) {
+        } catch (JsonSyntaxException e) {
             log.error("Failed to parse version: " + entry.getId() + " json syntax", e);
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -113,17 +113,17 @@ public class VersionLauncher implements Runnable {
         int size = version.getAssetIndex().getSize();
         String url = version.getAssetIndex().getUrl();
         Path assetPath = installPath.resolve(Paths.get("indexes", version.getAssetIndex().getId() + ".json"));
-        if(!httpApi.downloadToFile(url, assetPath, progressBar, size)) {
+        if (!httpApi.downloadToFile(url, assetPath, progressBar, size)) {
             log.error("Failed to download asset indexes info");
             return false;
         }
         totalSizeDownload += size;
         String assetIndexJson = new String(Files.readAllBytes(assetPath), StandardCharsets.UTF_8);
         GameAssets assets = gson.fromJson(assetIndexJson, GameAssets.class);
-        for(String key : assets.getObjects().keySet()) {
+        for (String key : assets.getObjects().keySet()) {
             totalSizeDownload += assets.getObjects().get(key).getSize();
         }
-        for(LibraryEntry entry : version.getLibraries()) {
+        for (LibraryEntry entry : version.getLibraries()) {
             totalSizeDownload += entry.getDownloads().getArtifact().getSize();
             //entry.getDownloads().getClassifiers().flatMap(LibraryClassifiers::getNativesHost).ifPresent(y -> totalSizeDownload += y.getSize());
         }
@@ -140,32 +140,30 @@ public class VersionLauncher implements Runnable {
     }
 
     private boolean doesVersionExist() {
-        if(entry == null) {
+        if (entry == null) {
             return false;
         }
         return workingDir.resolve(Paths.get("versions", entry.getId())).toFile().exists();
     }
 
     private boolean installGame(String json, GameVersionEntry version) throws IOException, InterruptedException {
-        log.info("Installing game client: " + entry.getId());
+        log.info("Installing game client: {}", entry.getId());
         Path installPath = workingDir.resolve(Paths.get("versions", entry.getId()));
-        if(!installPath.toFile().exists()) {
-            if (!installPath.toFile().mkdirs()) {
-                log.error("Failed to create folder: " + installPath.toString());
-                return false;
-            }
+        if (!installPath.toFile().exists() && !installPath.toFile().mkdirs()) {
+            log.error("Failed to create folder: {}", installPath);
+            return false;
         }
         Files.write(installPath.resolve(Paths.get(entry.getId() + ".json")), json.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
         return downloadGame(installPath, version);
     }
 
     private boolean downloadAssets(GameVersionEntry version) throws IOException, InterruptedException {
-        log.info("Installing assets for " + entry.getId());
+        log.info("Installing assets for {}", entry.getId());
         Path installPath = workingDir.resolve(Paths.get("assets"));
         int size = version.getAssetIndex().getSize();
         String url = version.getAssetIndex().getUrl();
         Path assetPath = installPath.resolve(Paths.get("indexes", version.getAssetIndex().getId() + ".json"));
-        if(!httpApi.downloadToFile(url, assetPath, progressBar, size)) {
+        if (!httpApi.downloadToFile(url, assetPath, progressBar, size)) {
             log.error("Failed to download asset indexes info");
             return false;
         }
@@ -174,14 +172,14 @@ public class VersionLauncher implements Runnable {
         GameAssets assets = gson.fromJson(assetIndexJson, GameAssets.class);
         Path assetObjects = installPath.resolve("objects");
         var objects = assets.getObjects();
-        for(AssetEntry asset : objects.values()) {
+        for (AssetEntry asset : objects.values()) {
             //log.info("Downloading asset " + counter + " / " + assets.getObjects().size());
             String hash = asset.getHash();
             int assetSize = asset.getSize();
             String assetUrl = hash.substring(0, 2) + "/" + hash;
             Path assetObjectPath = assetObjects.resolve(assetUrl);
             url = RESOURCES_BASE_URL + assetUrl;
-            if(!httpApi.downloadToFile(url, assetObjectPath, progressBar, asset.getSize())) {
+            if (!httpApi.downloadToFile(url, assetObjectPath, progressBar, asset.getSize())) {
                 log.error("Failed to download asset indexes info");
                 return false;
             }
@@ -191,45 +189,26 @@ public class VersionLauncher implements Runnable {
     }
 
     private boolean installLibraries(GameVersionEntry version) throws IOException, InterruptedException {
-        log.info("Installing libraries for " + entry.getId());
+        log.info("Installing libraries for {}", entry.getId());
         Path installPath = workingDir.resolve(Paths.get("libraries"));
 
-        if(!installPath.toFile().exists()) {
-            if(!installPath.toFile().mkdirs()) {
-                log.error("Failed to create folder: " +installPath.toString());
-                return false;
-            }
+        if (!installPath.toFile().exists() && !installPath.toFile().mkdirs()) {
+            log.error("Failed to create folder: {}", installPath);
+            return false;
         }
         List<LibraryEntry> libraries = version.getLibraries();
-        if(libraries == null || libraries.isEmpty()) {
+        if (libraries == null || libraries.isEmpty()) {
             log.error("Could not parse libraries");
             return false;
         }
         for (LibraryEntry library : libraries) {
-            //log.info("Downloading library: " + (i + 1) + "/" + libraries.size());
             try {
-                String path = library.getDownloads().getArtifact().getPath();
-                String url = library.getDownloads().getArtifact().getUrl();
-                String sha1 = library.getDownloads().getArtifact().getSha1();
-                int size = library.getDownloads().getArtifact().getSize();
-                Path libraryPath = installPath.resolve(path);
-                if (!libraryPath.getParent().toFile().exists()) {
-                    if (!libraryPath.getParent().toFile().mkdirs()) {
-                        log.error("Failed to create folder: " + libraryPath.getParent().toString());
-                        return false;
-                    }
-                }
-                if (!httpApi.downloadToFile(url, libraryPath, progressBar, size)) {
-                    log.error("Failed to download library: " + url);
-                    return false;
-                }
-                updateProgress(size);
-                if(library.doesBelongToOS()) {
+                if (library.doesBelongToOS()) {
                     var artifact = library.getDownloads().getArtifact();
-                    path = artifact.getPath();
-                    url = artifact.getUrl();
-                    size = artifact.getSize();
-                    libraryPath = installPath.resolve(path);
+                    var path = artifact.getPath();
+                    var url = artifact.getUrl();
+                    var size = artifact.getSize();
+                    var libraryPath = installPath.resolve(path);
                     if (!libraryPath.getParent().toFile().exists()) {
                         if (!libraryPath.getParent().toFile().mkdirs()) {
                             log.error("Failed to create folder: " + libraryPath.getParent().toString());
@@ -255,12 +234,12 @@ public class VersionLauncher implements Runnable {
             String url = entry.getDownloads().getClient().getUrl();
             int size = entry.getDownloads().getClient().getSize();
             log.info("Starting client download..");
-            if(!httpApi.downloadToFile(url, versionPath.resolve(Paths.get("client.jar")), progressBar, size)) {
+            if (!httpApi.downloadToFile(url, versionPath.resolve(Paths.get("client.jar")), progressBar, size)) {
                 log.error("Failed to download game client");
                 return false;
             }
             updateProgress(size);
-        } catch(NullPointerException e) {
+        } catch (NullPointerException e) {
             log.error("Error while parsing game client download info ", e);
             return false;
         }
@@ -268,31 +247,31 @@ public class VersionLauncher implements Runnable {
     }
 
     private String formatArg(String arg) {
-        for(Map.Entry<String, String> entry : this.argumentMap.entrySet()) {
-             arg = arg.replace(entry.getKey(), entry.getValue());
+        for (Map.Entry<String, String> entry : this.argumentMap.entrySet()) {
+            arg = arg.replace(entry.getKey(), entry.getValue());
         }
         return arg;
     }
 
     private int isHigherVersion(String version1, String version2) {
-        if(version1.contains(":-natives")) {
+        if (version1.contains(":-natives")) {
             version1 = version1.substring(version1.lastIndexOf(':'));
         }
-        if(version2.contains(":-natives")) {
+        if (version2.contains(":-natives")) {
             version2 = version2.substring(version1.lastIndexOf(':'));
         }
         String[] parts1 = version1.split("\\.");
         String[] parts2 = version2.split("\\.");
-        for(int i = 0; i < Math.min(parts1.length, parts2.length); i++) {
+        for (int i = 0; i < Math.min(parts1.length, parts2.length); i++) {
             try {
                 int versionNum1 = Integer.parseInt(parts1[i]);
                 int versionNum2 = Integer.parseInt(parts2[i]);
-                if(versionNum1 > versionNum2) {
+                if (versionNum1 > versionNum2) {
                     return 1;
-                } else if(versionNum2 > versionNum1) {
+                } else if (versionNum2 > versionNum1) {
                     return -1;
                 }
-            } catch(NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 log.warn("Failed to compare version numbers: {} == {}", version1, version2);
                 return 1;
             }
@@ -305,8 +284,8 @@ public class VersionLauncher implements Runnable {
         Path versionsPath = workingDir.resolve(Paths.get("versions", entry.getId()));
         Path clientPath = versionsPath.resolve(Paths.get("client.jar"));
         Path nativesPath = versionsPath.resolve("natives");
-        if(!nativesPath.toFile().exists()) {
-            if(!nativesPath.toFile().mkdirs()) {
+        if (!nativesPath.toFile().exists()) {
+            if (!nativesPath.toFile().mkdirs()) {
                 log.error("Failed to create native files path: " + nativesPath.toString());
                 return false;
             }
@@ -324,42 +303,43 @@ public class VersionLauncher implements Runnable {
         StringBuilder nativeLibraryBuilder = new StringBuilder();
         //parseNative(version, nativeLibraryBuilder);
 
-        this.argumentMap.put("${natives_directory}", nativeLibraryBuilder.toString());
+        this.argumentMap.put("${natives_directory}", System.getProperty("java.io.tmpdir"));//nativeLibraryBuilder.toString());
         ProcessBuilder builder = new ProcessBuilder();
         List<String> args = new LinkedList<>();
         args.add("java");
         Collections.addAll(args, jvmArgs.split(" "));
 
         StringBuilder libraries = new StringBuilder();
-        for(LibraryEntry entry : version.getLibraries()) {
-            Path libraryPath = librariesPath.resolve(entry.getDownloads().getArtifact().getPath());
-            libraries.append(libraryPath.toString());
-            libraries.append(File.pathSeparatorChar);
+        for (LibraryEntry entry : version.getLibraries()) {
+            if(entry.doesBelongToOS()) {
+                Path libraryPath = librariesPath.resolve(entry.getDownloads().getArtifact().getPath());
+                libraries.append(libraryPath.toString());
+                libraries.append(File.pathSeparatorChar);
+            }
         }
         libraries.append(clientPath.toString());
         this.argumentMap.put("${classpath}", libraries.toString());
 
-        for(JvmArgument jvmArg : version.getArguments().getJvmArguments()) {
+        for (JvmArgument jvmArg : version.getArguments().getJvmArguments()) {
             boolean match = true;
-            for(JvmArgumentRule rule : jvmArg.getRules()) {
-                if(!rule.getOs().doesApply()) {
+            for (JvmArgumentRule rule : jvmArg.getRules()) {
+                if (!rule.getOs().doesApply()) {
                     match = false;
                     break;
                 }
             }
-            if(match) {
-                jvmArg.getValue().forEach(x->args.add(formatArg(x)));
+            if (match) {
+                jvmArg.getValue().forEach(x -> args.add(formatArg(x)));
             }
         }
         //args.add(libraries.toString());
         args.add(version.getMainClass());
-        for(String gameArg : version.getArguments().getGameArguments()) {
+        for (String gameArg : version.getArguments().getGameArguments()) {
             args.add(formatArg(gameArg));
         }
 
         StringBuilder sb = new StringBuilder();
-        for (String s : args)
-        {
+        for (String s : args) {
             sb.append(s);
             sb.append(" ");
         }
@@ -378,7 +358,7 @@ public class VersionLauncher implements Runnable {
     }
 
     public void launch(VersionEntry entry, String name, String jvmArgs) {
-        if(!this.instance.isAlive()) {
+        if (!this.instance.isAlive()) {
             this.jvmArgs = jvmArgs;
             this.currentSizeDownload = 0;
             this.totalSizeDownload = 0;
